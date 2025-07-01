@@ -1,92 +1,85 @@
-Sure! Here's how the structure of your tool will look, along with a clean layout of files, content, and how it feels when someone runs or uses it.
-
----
-
-## 📁 **Directory Layout**
-
-```
-timeroast_cracker/
-├── timeroast_cracker.py         # 🔓 The main cracking script
-├── requirements.txt             # 📦 Python dependencies
-├── hashes.txt                   # 🧊 Timeroast hash file (example)
-├── rockyou.txt                  # 🔑 Wordlist (symlink or download)
-└── README.md                    # 📘 Tool description and usage instructions
-```
-
----
-
-## 🔓 **timeroast\_cracker.py (Tool Name)**
-
-A Python tool that cracks **MS-SNTP hashes** from **Timeroast attacks** using a wordlist or single password.
-
-It prints results like:
-
-```bash
-$ python3 timeroast_cracker.py -H hashes.txt -w /usr/share/wordlists/rockyou.txt
-
-[*] Cracking RID 1000...
-🔍 RID 1000:  10%|████▌                                | 140000/1400000 [00:02<00:18, 75000pw/s]
-[-] Password for RID 1000 not found in wordlist.
-
-[*] Cracking RID 1144...
-🔍 RID 1144:  45%|█████████████▎                       | 630000/1400000 [00:05<00:06, 110000pw/s]
-[+] Password for RID 1144: monkey123
-```
-
----
-
-## 📘 **README.md Preview**
-
-````markdown
 # ⏱️ Timeroast Password Cracker
 
-This is a lightweight Python script that cracks MS-SNTP hashes obtained from the Timeroast attack against Active Directory domain controllers.
+A lightweight and powerful Python tool for cracking MS-SNTP password hashes obtained via the **Timeroast attack** on Active Directory environments.
 
-## Features
-- Supports hash format: `RID:$sntp-ms$HASH$SALT`
-- Wordlist-based and single password cracking
-- Shows dynamic progress bar with `tqdm`
-- Fallback support for MD4 with `passlib`
+This tool is ideal for red teamers, penetration testers, and researchers performing targeted credential attacks against domain-joined systems that have been coerced into revealing time-based authentication hashes.
 
-## Usage
+---
 
-```bash
-python3 timeroast_cracker.py -H hashes.txt -w /usr/share/wordlists/rockyou.txt
-````
+##  Features
 
-```bash
-python3 timeroast_cracker.py --hash "1144:$sntp-ms$deadbeef$saltsalt" --password 'P@ssword'
-```
+-  Supports MS-SNTP hash format: `RID:$sntp-ms$HASH$SALT`
+-  Crack hashes using a wordlist (e.g., rockyou.txt)
+-  Test a single password against one or more hashes
+-  Real-time progress bar using `tqdm`
+-  Handles large hash sets and wordlists efficiently
+-  Fallback to `passlib` for systems without native `md4` support
 
-## Installation
+---
+
+##  Requirements
+
+- Python 3
+- [tqdm](https://pypi.org/project/tqdm/)
+- [passlib](https://pypi.org/project/passlib/) (optional fallback for MD4)
+
+Install requirements:
 
 ```bash
 pip install -r requirements.txt
-```
-
-## Requirements
-
-* Python 3.6+
-* tqdm
-* passlib (optional for fallback MD4)
-
 ````
 
 ---
 
-## 📦 requirements.txt
+## File Format
+
+Each hash line must be in the following format:
 
 ```text
-tqdm>=4.0.0
-passlib>=1.7.0
-````
+RID:$sntp-ms$<hash>$<salt>
+```
+
+Example:
+
+```text
+1144:$sntp-ms$9fb07ac2e476386ff4d4fd03162b3d74$1c0111e9...dcbebdc110d
+```
 
 ---
 
-Let me know if you want:
+##  Usage Examples
 
-* ✅ To generate this as a zipped folder
-* ✅ Auto-download of `rockyou.txt` if not found
-* ✅ To convert this into a command-line tool with `setup.py` or `argcomplete`
+#### Crack hashes from file using a wordlist
 
-Would you like a full README.md file written out too?
+```bash
+python3 timeroast_cracker.py -H hashes -w /usr/share/wordlists/rockyou.txt
+```
+
+#### Test a single password against multiple hashes
+
+```bash
+python3 timeroast_cracker.py -H hashes --password Password123
+```
+
+#### Crack a single hash
+
+```bash
+python3 timeroast_cracker.py --hash "1144:$sntp-ms$abc123...$deadbeef..." -w rockyou.txt
+```
+
+#### Help Menu
+
+```bash
+python3 timeroast_cracker.py --help
+```
+
+---
+
+##  Background
+
+Timeroasting is a technique that abuses the MS-SNTP authentication mechanism in Active Directory environments. When certain account attributes are misconfigured (or manipulated by a privileged user), domain controllers may return MD5-based challenge-response hashes for accounts that normally wouldn’t be vulnerable. These hashes can be cracked offline to retrieve the cleartext password.
+
+Inspired by:
+
+* Timeroast attack by [Tom Tervoort (Secura)](https://www.secura.com/uploads/whitepapers/Secura-WP-Timeroasting-v3.pdf)
+
