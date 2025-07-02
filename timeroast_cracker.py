@@ -6,20 +6,22 @@ from binascii import unhexlify
 import sys
 from typing import List, Tuple
 
+try:
+    from tqdm import tqdm
+except ImportError:
+    print("Please install tqdm: pip install tqdm")
+    sys.exit(1)
+
 
 def md4(data: bytes) -> bytes:
     try:
         return hashlib.new('md4', data).digest()
     except ValueError:
-        # Fallback to passlib if md4 isn't available
         from passlib.utils.md4 import md4
         return md4(data)
 
 
 def parse_hash_line(line: str) -> Tuple[str, bytes, bytes]:
-    """
-    Parse a single hash line in format: RID:$sntp-ms$HASH$SALT
-    """
     try:
         parts = line.strip().split('$')
         rid = parts[0].split(':')[0]
@@ -50,12 +52,15 @@ def try_password(password: str, hash_data: Tuple[str, bytes, bytes]) -> bool:
 
 def crack_hashes(hashes: List[Tuple[str, bytes, bytes]], wordlist: List[str]):
     for rid, hashval, salt in hashes:
-        print(f"[*] Cracking RID {rid}...")
-        for word in wordlist:
+        print(f"\n[*] Cracking RID {rid}...")
+        found = False
+        for word in tqdm(wordlist, desc=f"🔍 RID {rid}", unit="pw", ncols=70):
             if try_password(word, (rid, hashval, salt)):
-                print(f"[+] Password for RID {rid}: {word}")
+                print(f"\n[+] Password for RID {rid}: {word}")
+                found = True
                 break
-        else:
+
+        if not found:
             print(f"[-] Password for RID {rid} not found in wordlist.")
 
 
@@ -83,18 +88,15 @@ def main():
 
     args = parser.parse_args()
 
-    # Load hashes
     if args.hashes:
         hash_entries = load_hashes_from_file(args.hashes)
     else:
         hash_entries = [parse_hash_line(args.hash)]
 
-    # Wordlist mode
     if args.wordlist:
         words = load_wordlist(args.wordlist)
         crack_hashes(hash_entries, words)
 
-    # Single password mode
     elif args.password:
         test_single_password(args.password, hash_entries)
 
